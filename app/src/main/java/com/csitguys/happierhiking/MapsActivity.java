@@ -1,5 +1,6 @@
 package com.csitguys.happierhiking;
 
+import android.content.Intent;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -22,6 +23,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        //Start the login activity if login is successful then load maps else login does not finish
+        Intent intent = new Intent(this, LoginActivity.class);
+        startActivity(intent);
         /**
          *Test block to debug why emulator was not running APP emulator was running play services 6.7
          * while Gradle compiler was running 8.3.0
@@ -43,12 +47,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     /**
      * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
+     * temporary marker placed at CSUMB campus
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
