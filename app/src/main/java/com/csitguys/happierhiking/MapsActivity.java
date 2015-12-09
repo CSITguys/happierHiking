@@ -50,18 +50,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         //initialize geo locate variables
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        Log.e("Hiker App", locationManager.toString());
         if (locationManager != null) {
+            Log.e("Hiker App", "location manager not null");
             //booleans that are used to determine the type of locator is available on the device
             boolean gpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            Log.e("Hiker App", Boolean.toString(gpsEnabled));
             boolean networkLocationEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+            Log.e("Hiker App", Boolean.toString(networkLocationEnabled));
             //if GPS is enabled than use it for accuracy
             checkGPSPermission();
             if(gpsEnabled){
                 Toast.makeText(this, "provider enabled", Toast.LENGTH_SHORT).show();
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000L, 10f, this);
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 10, this);
+
             } else if(networkLocationEnabled){
-                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,5000L,10f,this);
+                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,0,0,this);
             }else{
                 //do nothing
             }
@@ -81,8 +86,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         LatLng csumb = new LatLng(36.65481, -121.8062);
         //place marker on map
        // mMap.addMarker(new MarkerOptions().position(csumb).title("Marker at CSUMB"));
-       // mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(csumb, 10));
-        setMapLocation();
+       mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(csumb, 10));
+       // setMapLocation();
+        Log.e("Hiker App", "map is ready");
+        mMap.setLocationSource(this);
+        mMap.setMyLocationEnabled(true);
+        checkGPSPermission();
+        Log.e("Hiker App", Boolean.toString(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)));
     }
 
     @Override
@@ -97,11 +107,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onLocationChanged(Location location) {
+
+        //
         if(mListener != null){
             mListener.onLocationChanged(location);
             LatLng currentLocation = new LatLng(location.getLatitude(),location.getLongitude());
             Log.i ("Hiker App", currentLocation.toString());
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLocation,10));
+        } else {
+            Log.e("Hiker App","mlistener is null");
         }
 
     }
