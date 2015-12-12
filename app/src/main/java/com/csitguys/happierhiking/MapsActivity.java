@@ -91,6 +91,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Log.e("Hiker App", "map is ready");
         mMap.setLocationSource(this);
         mMap.setMyLocationEnabled(true);
+        //makes sure app permissions are set if not prompts to allow
         checkGPSPermission();
         Log.e("Hiker App", Boolean.toString(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)));
     }
