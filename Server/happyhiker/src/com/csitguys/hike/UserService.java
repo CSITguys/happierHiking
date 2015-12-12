@@ -3,6 +3,7 @@ package com.csitguys.hike;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.*;
+import java.util.StringTokenizer;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -24,8 +25,9 @@ public class UserService extends HttpServlet{
 	
 	static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
 	static final String DB_URL="jdbc:mysql://localhost/happyhiker";
-    static final String USER = "root";
-    static final String PASS = "win4dowU";
+    static final String USER = "test";
+    static final String PASS = "";
+   //	 static String str = DriverUtilities.makeURL("localhost", "happyhiker", "vendor");
     
     {
     	try {
@@ -45,21 +47,24 @@ public class UserService extends HttpServlet{
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)throws ServletException, IOException{
     	response.setContentType("text/plain"); 
-		//int id = parseURL( request.getRequestURI()) ;
-		int id = 1;
+		String id = parseURL( request.getRequestURI()) ;
+		//int id = 1;
 		GsonBuilder builder = new GsonBuilder();
 		Gson gson = builder.create();
 		PrintWriter out = response.getWriter();
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
-		if (id == 1) {
-			User user = getUser("test@test.com");
-			if (user == null)
+		if (id != null) {
+			User user = getUser(id);
+			if (user == null){
+				//out.println("the user is null");
 				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-			else 
+			}
+			else {
+				//out.println("user is not null");
 				gson.toJson(user, out);
+			}
 		} else {
-			//CrimeList crimes = getAllCrimes();
-			//gson.toJson(crimes, out);
+			//
 		}
 		out.close();
 		
@@ -70,23 +75,36 @@ public class UserService extends HttpServlet{
     	try {
     		conn = getConnection();
     		Statement stmnt =  conn.createStatement();
-    		String sql = "SELECT * FROM user where user_email_add = " + emailAdress;
+    		String sql = "SELECT * FROM user WHERE user.user_email_add = '" + emailAdress + "'" ;
     		ResultSet rs = stmnt.executeQuery(sql);
-    		User user = null;
+    		User user1, user2 = null;
+    		user1 = new User();
+			user1.id = 1;
+			user1.emailAddress = "connection";
+			user1.password = "connection";
+			user1.userName = "connection";
     		while(rs.next()){
-    			user = new User();
-    			user.id = rs.getInt("user_id");
-    			user.emailAddress = rs.getString("user_email_add");
-    			user.password = rs.getString("user_pw");
-    			user.userName = rs.getString("user_name");
+    			user2 = new User();
+    			user2.id = rs.getInt("user_id");
+    			user2.emailAddress = rs.getString("user_email_add");
+    			user2.password = rs.getString("user_pw");
+    			user2.userName = rs.getString("user_name");
     		}
     		rs.close();
     		conn.commit();
     		conn.close();
-    		return user;
+    		if(user2==null)
+    			return user1;
+    		else
+    			return user2;
     	}catch (Exception e){
     		e.printStackTrace();
-    		return null;
+    		User user = new User();
+    		user.id = 3;
+    		user.emailAddress = e.getMessage();
+    		user.userName = ((SQLException) e).getSQLState();
+    		user.password = Integer.toString(((SQLException) e).getErrorCode());
+    		return user;
     	}
 		
     }
@@ -96,5 +114,16 @@ public class UserService extends HttpServlet{
         Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
         conn.setAutoCommit(false); 
         return conn;
+	}
+    private String parseURL(String url) throws ServletException {
+		StringTokenizer st = new StringTokenizer(url, "/"); 
+		st.nextToken();  // skip over project name
+		st.nextToken();  // skip over "user"  
+		if (st.hasMoreTokens()){
+			// get the {id} convert to int.
+			return  st.nextToken();
+		} else {
+		   return null;  // there is no {id} 
+		}
 	}
 }
