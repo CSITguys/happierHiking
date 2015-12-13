@@ -18,31 +18,33 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
+
 
 /**
  * A login screen that offers login via email/password.
  */
 public class LoginActivity extends AppCompatActivity {
 
-    /**
-     * A dummy authentication store containing known user names and passwords.
-     * TODO: remove after connecting to a real authentication system.
-     */
-    private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "foo@example.com:hello", "bar@example.com:world"
-    };
+
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
-    private static int duration = Toast.LENGTH_SHORT;
+    private boolean mCreateNewAccount = false;
+    private boolean mDuplicateUserName = false;
     private UserLoginTask mAuthTask = null;
 
     // UI references.
     private AutoCompleteTextView mEmailView;
     private EditText mPasswordView;
+    private EditText mPasswordConfirmView;
+    private EditText mUserNameView;
+    private TextView mCreateNewAccountLabel;
+    private Button mSubmitButton;
+    private Button mReturnButton;
     private View mProgressView;
     private View mLoginFormView;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,9 +53,12 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
-        //populateAutoComplete();
-
+        mUserNameView = (AutoCompleteTextView) findViewById(R.id.userName);
+        mPasswordConfirmView = (EditText) findViewById(R.id.passwordConfirm);
+        mReturnButton = (Button) findViewById(R.id.return_button);
+        mSubmitButton = (Button) findViewById(R.id.email_sign_in_button);
         mPasswordView = (EditText) findViewById(R.id.password);
+        mCreateNewAccountLabel = (TextView) findViewById(R.id.AccountLabel);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
@@ -73,14 +78,24 @@ public class LoginActivity extends AppCompatActivity {
                 attemptLogin();
             }
         });
+        mReturnButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //go back to sign in screen
+                mCreateNewAccount = false;
+                mPasswordConfirmView.setVisibility(View.GONE);
+                mUserNameView.setVisibility(View.GONE);
+                mReturnButton.setVisibility(View.GONE);
+
+                mSubmitButton.setText(R.string.action_sign_in_short);
+                mCreateNewAccountLabel.setVisibility(View.GONE);
+
+            }
+        });
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
     }
-
-    /**
-     * Callback received when a permissions request has been completed.
-     */
 
 
 
@@ -97,17 +112,41 @@ public class LoginActivity extends AppCompatActivity {
         // Reset errors.
         mEmailView.setError(null);
         mPasswordView.setError(null);
+        mPasswordConfirmView.setError(null);
+        mUserNameView.setError(null);
+
 
         // Store values at the time of the login attempt.
         String email = mEmailView.getText().toString();
         String password = mPasswordView.getText().toString();
+        String passwordConfirm = mPasswordConfirmView.getText().toString();
+        String userName = mUserNameView.getText().toString();
 
         boolean cancel = false;
         View focusView = null;
+        //if you are creating a new account and username is empty
+        if(mCreateNewAccount && TextUtils.isEmpty(userName)){
+            mUserNameView.setError(getString(R.string.error_field_required));
+            focusView = mUserNameView;
+            cancel = true;
+        }
 
-        // Check for a valid password, if the user entered one.
-        if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) {
+        // Check for a valid password
+        //is first password empty?
+        if(TextUtils.isEmpty(password)){
+            mPasswordView.setError(getString(R.string.error_field_required));
+            focusView = mPasswordView;
+            cancel =true;
+        }
+        //checks the length of the password
+        else if (!isPasswordValid(password)) {
             mPasswordView.setError(getString(R.string.error_invalid_password));
+            focusView = mPasswordView;
+            cancel = true;
+        }
+        //if creating new account and the passwords are not the same
+        else if(mCreateNewAccount && !password.equals(passwordConfirm)){
+            mPasswordView.setError(getString(R.string.error_password_mismatch));
             focusView = mPasswordView;
             cancel = true;
         }
@@ -131,18 +170,18 @@ public class LoginActivity extends AppCompatActivity {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true);
-            mAuthTask = new UserLoginTask(email, password);
+            mAuthTask = new UserLoginTask(email, password, mCreateNewAccount, userName);
             mAuthTask.execute((Void) null);
         }
     }
 
     private boolean isEmailValid(String email) {
-        //TODO: Replace this with your own logic
+        //TODO: Needs to block the use of '/' and ':'
         return email.contains("@");
     }
 
     private boolean isPasswordValid(String password) {
-        //TODO: Replace this with your own logic
+        //TODO: Needs to block the use of '/' and ':'
         return password.length() > 4;
     }
 
@@ -192,10 +231,15 @@ public class LoginActivity extends AppCompatActivity {
 
         private final String mEmail;
         private final String mPassword;
+        private final boolean mAccountCreation;
+        private final String mUserName;
 
-        UserLoginTask(String email, String password) {
+        UserLoginTask(String email, String password, boolean accountCreation, String userName) {
             mEmail = email;
             mPassword = password;
+            mAccountCreation = accountCreation;
+            mUserName = userName;
+
         }
 
         @Override
@@ -204,18 +248,51 @@ public class LoginActivity extends AppCompatActivity {
 
             // TODO check if account exists if not prompt to create
 
-            User user1 = null;
-           try {
-              user1 = UserServletConnection.getUser("test@test.com");
-           } catch (Exception e){
-               Log.e("happy hiker debug",e.toString());
-           }
-            if (user1==null) {
-                Log.e("happyhiker debug", "user1 is null you failed");
-            } else
-                Log.e("happyhiker debug", user1.emailAddress);
+            User user, userOutput = null;
+            user = new User();
+            user.emailAddress = mEmail;
+            user.password = mPassword;
+            if(mAccountCreation) {
+                user.userName = mUserName;
+                Log.e("happy hiker debug", "account creation");
+                //Do post of the User
+                try {
+                    if(UserServletConnection.putUser(user)) {
+                        Log.e("happy hiker debug log", "put user is unique");
+                        return true;
+                    } else {
+                        mDuplicateUserName = true;
+                        Log.e("happy hiker debug log", "put user is duplicate");
+                        return false;
+                    }
+                } catch (Exception e){
+                    Log.e("happy hiker debug log", "Failed to update SERVER: ", e);
+                    return false;
+                }
 
-            // TODO: register the new account here.
+            }else {
+                try {
+                    userOutput = UserServletConnection.getUser(user);
+                } catch (Exception e) {
+                    Log.e("happy hiker debug", e.toString());
+                }
+                //account does not exist
+                if (userOutput == null) {
+                    //account doesn't exist so change to new account views
+                    mCreateNewAccount = true;
+                    Log.e("happyhiker debug", "user1 is null you failed");
+                    return false;
+                } else {
+                    //account exists
+                    if (userOutput.password.equals("good")) {
+                        Log.e("happyhiker debug", "Authenticated as " + userOutput.userName);
+                    }else{
+                        Log.e("happyhiker debug", "bad pw is: " + userOutput.password);
+                        return false;
+                    }
+                }
+            }
+
             return true;
         }
 
@@ -225,10 +302,29 @@ public class LoginActivity extends AppCompatActivity {
             showProgress(false);
 
             if (success) {
+                //TODO add to shared prefs
                 finish();
             } else {
-                mPasswordView.setError(getString(R.string.error_incorrect_password));
-                mPasswordView.requestFocus();
+                if(mCreateNewAccount){
+                    //make registration views visible
+                    mPasswordConfirmView.setVisibility(View.VISIBLE);
+                    mUserNameView.setVisibility(View.VISIBLE);
+                    mReturnButton.setVisibility(View.VISIBLE);
+                    mSubmitButton.setText(R.string.action_register);
+                    mCreateNewAccountLabel.setVisibility(View.VISIBLE);
+
+                    if(mDuplicateUserName) {
+                        mDuplicateUserName = false;
+                        mUserNameView.setError(getString(R.string.error_duplicate_username));
+                        mUserNameView.requestFocus();
+                        Log.e("duplicate names", "duplicate names");
+                        mUserNameView.setText("");
+                    }
+
+                } else {
+                    mPasswordView.setError(getString(R.string.error_incorrect_password));
+                    mPasswordView.requestFocus();
+                }
             }
         }
 
