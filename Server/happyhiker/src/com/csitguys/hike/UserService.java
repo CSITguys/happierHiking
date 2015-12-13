@@ -1,6 +1,7 @@
 package com.csitguys.hike;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.sql.*;
 import java.util.StringTokenizer;
@@ -48,13 +49,23 @@ public class UserService extends HttpServlet{
     protected void doGet(HttpServletRequest request, HttpServletResponse response)throws ServletException, IOException{
     	response.setContentType("text/plain"); 
 		String id = parseURL( request.getRequestURI()) ;
-		//int id = 1;
+		PrintWriter out = response.getWriter();
+		//out.println(id);
+		int index = id.indexOf(':');
+		//out.println(Integer.toString(index));
+		String emailAddress = null;
+		String password = null;
+		if(index>=0){
+			emailAddress = id.substring(0,index);
+			password = id.substring(index+1);
+		}
+		//out.println(emailAddress + "       " + password);
 		GsonBuilder builder = new GsonBuilder();
 		Gson gson = builder.create();
-		PrintWriter out = response.getWriter();
+		
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
-		if (id != null) {
-			User user = getUser(id);
+		if (emailAddress != null) {
+			User user = getUser(emailAddress, password);
 			if (user == null){
 				//out.println("the user is null");
 				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -69,7 +80,21 @@ public class UserService extends HttpServlet{
 		out.close();
 		
     }
-    private User getUser(String emailAdress){
+    @Override
+	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// insert a new User
+		InputStreamReader in = new InputStreamReader(request.getInputStream());
+		response.setContentType("text/plain");
+		
+		GsonBuilder builder = new GsonBuilder();
+		Gson gson = builder.create();
+		User user = gson.fromJson(in,  User.class);
+		int responseCode = insertUser(user);
+		if(responseCode<1){
+			response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+		}
+	}
+    private User getUser(String emailAdress, String password){
     	
     	Connection conn = null;
     	try {
@@ -77,37 +102,60 @@ public class UserService extends HttpServlet{
     		Statement stmnt =  conn.createStatement();
     		String sql = "SELECT * FROM user WHERE user.user_email_add = '" + emailAdress + "'" ;
     		ResultSet rs = stmnt.executeQuery(sql);
-    		User user1, user2 = null;
-    		user1 = new User();
-			user1.id = 1;
-			user1.emailAddress = "connection";
-			user1.password = "connection";
-			user1.userName = "connection";
+    		User user = null;
+    	
     		while(rs.next()){
-    			user2 = new User();
-    			user2.id = rs.getInt("user_id");
-    			user2.emailAddress = rs.getString("user_email_add");
-    			user2.password = rs.getString("user_pw");
-    			user2.userName = rs.getString("user_name");
+    			user = new User();
+    			user.id = rs.getInt("user_id");
+    			user.emailAddress = rs.getString("user_email_add");
+    			user.password = rs.getString("user_pw");
+    			user.userName = rs.getString("user_name");
     		}
     		rs.close();
     		conn.commit();
     		conn.close();
-    		if(user2==null)
-    			return user1;
-    		else
-    			return user2;
+    		if(user.password.compareTo(password)==0){
+    			user.password = "good";
+    		}else
+    			user.password = "bad"; 
+    		return user;
     	}catch (Exception e){
     		e.printStackTrace();
-    		User user = new User();
-    		user.id = 3;
-    		user.emailAddress = e.getMessage();
-    		user.userName = ((SQLException) e).getSQLState();
-    		user.password = Integer.toString(((SQLException) e).getErrorCode());
-    		return user;
+    		User userErr = null;
+    		return userErr;
     	}
 		
     }
+    private int insertUser(User user){
+		Connection conn = null;
+		int responseCode = -1;
+		try {
+			 conn = getConnection();
+	         // Execute SQL query
+			 responseCode = insertUser(conn, user);
+	         conn.commit();
+	         conn.close();
+		} catch (Exception e ){
+			e.printStackTrace();
+		} 
+		return responseCode;
+	}
+	
+	private int insertUser(Connection conn, User user){
+		int responseCode = -1;
+		try {
+	         // Execute SQL query
+	         Statement stmt = conn.createStatement();
+	         String sql = "INSERT INTO user (`user_id`, `user_email_add`, `user_pw`, `user_name`)"
+	        		+ "VALUES (NULL, '" + user.emailAddress + "', '"+ user.password + "', '" 
+	        		+ user.userName + "')";
+	         responseCode = stmt.executeUpdate(sql);
+		} catch (Exception e ){
+			e.printStackTrace();
+		} 
+		return responseCode;
+	}
+	
     private Connection getConnection() throws Exception {
 
         // Open a connection
