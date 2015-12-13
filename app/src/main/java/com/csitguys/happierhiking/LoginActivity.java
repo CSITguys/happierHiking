@@ -35,14 +35,21 @@ public class LoginActivity extends AppCompatActivity {
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
-    private static int duration = Toast.LENGTH_SHORT;
+    private Boolean mCreateNewAccount = false;
     private UserLoginTask mAuthTask = null;
 
     // UI references.
     private AutoCompleteTextView mEmailView;
     private EditText mPasswordView;
+    private EditText mPasswordConfirmView;
+    private EditText mUserNameView;
+    private TextView mCreateNewAccountLabel;
+    private Button mSubmitButton;
+    private Button mReturnButton;
     private View mProgressView;
     private View mLoginFormView;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,9 +58,12 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
-        //populateAutoComplete();
-
+        mUserNameView = (AutoCompleteTextView) findViewById(R.id.userName);
+        mPasswordConfirmView = (EditText) findViewById(R.id.passwordConfirm);
+        mReturnButton = (Button) findViewById(R.id.return_button);
+        mSubmitButton = (Button) findViewById(R.id.email_sign_in_button);
         mPasswordView = (EditText) findViewById(R.id.password);
+        mCreateNewAccountLabel = (TextView) findViewById(R.id.AccountLabel);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
@@ -206,13 +216,17 @@ public class LoginActivity extends AppCompatActivity {
 
             User user1 = null;
            try {
-              user1 = UserServletConnection.getUser("test@test.com");
+              user1 = UserServletConnection.getUser(mEmail);
            } catch (Exception e){
                Log.e("happy hiker debug",e.toString());
            }
             if (user1==null) {
+                //account doesn't exist so change to new account views
+                mCreateNewAccount = true;
                 Log.e("happyhiker debug", "user1 is null you failed");
+                return false;
             } else
+            //if account exists
                 Log.e("happyhiker debug", user1.emailAddress);
 
             // TODO: register the new account here.
@@ -227,8 +241,18 @@ public class LoginActivity extends AppCompatActivity {
             if (success) {
                 finish();
             } else {
-                mPasswordView.setError(getString(R.string.error_incorrect_password));
-                mPasswordView.requestFocus();
+                if(mCreateNewAccount){
+                    //make registration views visible
+                    mPasswordConfirmView.setVisibility(View.VISIBLE);
+                    mUserNameView.setVisibility(View.VISIBLE);
+                    mReturnButton.setVisibility(View.VISIBLE);
+                    mSubmitButton.setText(R.string.action_register);
+                    mCreateNewAccountLabel.setVisibility(View.VISIBLE);
+
+                }else {
+                    mPasswordView.setError(getString(R.string.error_incorrect_password));
+                    mPasswordView.requestFocus();
+                }
             }
         }
 
