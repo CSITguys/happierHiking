@@ -3,11 +3,13 @@ package com.csitguys.happierhiking;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.support.v7.app.AppCompatActivity;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -16,6 +18,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 /**
  * A login screen that offers login via email/password.
@@ -32,6 +35,7 @@ public class LoginActivity extends AppCompatActivity {
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
+    private static int duration = Toast.LENGTH_SHORT;
     private UserLoginTask mAuthTask = null;
 
     // UI references.
@@ -196,22 +200,20 @@ public class LoginActivity extends AppCompatActivity {
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            // TODO: attempt authentication against a network service.
 
-            try {
-                // Simulate network access.
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                return false;
-            }
 
-            for (String credential : DUMMY_CREDENTIALS) {
-                String[] pieces = credential.split(":");
-                if (pieces[0].equals(mEmail)) {
-                    // Account exists, return true if the password matches.
-                    return pieces[1].equals(mPassword);
-                }
-            }
+            // TODO check if account exists if not prompt to create
+
+            User user1 = null;
+           try {
+              user1 = UserServletConnection.getUser("test@test.com");
+           } catch (Exception e){
+               Log.e("happy hiker debug",e.toString());
+           }
+            if (user1==null) {
+                Log.e("happyhiker debug", "user1 is null you failed");
+            } else
+                Log.e("happyhiker debug", user1.emailAddress);
 
             // TODO: register the new account here.
             return true;

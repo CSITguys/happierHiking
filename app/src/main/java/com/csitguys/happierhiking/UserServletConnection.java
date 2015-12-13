@@ -16,19 +16,18 @@ public class UserServletConnection {
 
     private static final String SERVER_URL = "http://cstserver2b.bitnamiapp.com/happyhiker/user";
 
-    public static User postUser(User user) throws Exception{
-        URL url = new URL(SERVER_URL);
-        HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+    public static User getUser(String userName) throws Exception {
+        URL url = new URL(SERVER_URL + "/" + userName);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
         try {
-            connection.setDoOutput(true);
-            connection.setRequestMethod("POST");
-
+            InputStreamReader in = new InputStreamReader(connection.getInputStream());
+            GsonBuilder builder = new GsonBuilder();
+            Gson gson = builder.create();
+            User user = gson.fromJson(in, User.class);
+            return user;
         } finally {
-
+            connection.disconnect();
         }
-
-        User user1 = new User();
-        return user1;
     }
 }
