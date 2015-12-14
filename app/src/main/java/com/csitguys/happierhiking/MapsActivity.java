@@ -3,6 +3,7 @@ package com.csitguys.happierhiking;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -32,6 +33,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private final static int MY_PERMISSION_ACCESS_FINE_LOCATION = 1;
     private LocationSource.OnLocationChangedListener mListener;
+    private SharedPreferences sharedpreferences;
     private LocationManager locationManager;
     private Context mContext;
 
@@ -62,7 +64,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             //if GPS is enabled than use it for accuracy
             checkGPSPermission();
             if(gpsEnabled){
-                Toast.makeText(this, "provider enabled", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(this, "provider enabled", Toast.LENGTH_SHORT).show();
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 10, this);
 
             } else if(networkLocationEnabled){
@@ -93,6 +95,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setMyLocationEnabled(true);
         //makes sure app permissions are set if not prompts to allow
         checkGPSPermission();
+        sharedpreferences = getSharedPreferences(getString(R.string.pref_file), Context.MODE_PRIVATE);
+        String userName = sharedpreferences.getString(getString(R.string.saved_user_name),null);
+        if(userName!=null){
+            Toast.makeText(this, "Logged in as: " + userName, Toast.LENGTH_SHORT).show();
+        }
         Log.e("Hiker App", Boolean.toString(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)));
     }
 

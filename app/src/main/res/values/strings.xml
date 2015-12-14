@@ -22,4 +22,9 @@
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
+    <string name="pref_file">com.csitguys.happierhiking.prefs</string>
+    <string name="saved_user_state_key">savedUserState</string>
+    <string name="saved_user_email">savedUserEmail</string>
+    <string name="saved_user_pw">savedUserPW</string>
+    <string name="saved_user_name">savedUserName</string>
 </resources>

@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -18,6 +19,11 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.StringTokenizer;
 
 
 /**
@@ -44,13 +50,19 @@ public class LoginActivity extends AppCompatActivity {
     private View mProgressView;
     private View mLoginFormView;
 
+    private User mUser;
+
+    SharedPreferences sharedpreferences;
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         //set the view to the login activity
         setContentView(R.layout.activity_login);
+
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         mUserNameView = (AutoCompleteTextView) findViewById(R.id.userName);
@@ -95,6 +107,19 @@ public class LoginActivity extends AppCompatActivity {
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+
+        sharedpreferences = getSharedPreferences(getString(R.string.pref_file), Context.MODE_PRIVATE);
+        if(sharedpreferences.getBoolean(getString(R.string.saved_user_state_key), false)){
+            //user has a login stored
+            //so try that one
+            showProgress(true);
+            //get data from shared prefs
+            String email = sharedpreferences.getString(getString(R.string.saved_user_email),null);
+            String password = decodePW(sharedpreferences.getString(getString(R.string.saved_user_pw), null));
+            Log.e("Hapy hiker shared pref", password);
+            mAuthTask = new UserLoginTask(email, password, false, null);
+            mAuthTask.execute((Void) null);
+        }
     }
 
 
@@ -177,11 +202,13 @@ public class LoginActivity extends AppCompatActivity {
 
     private boolean isEmailValid(String email) {
         //TODO: Needs to block the use of '/' and ':'
+        if (email.contains("/:")) return false;
         return email.contains("@");
     }
 
     private boolean isPasswordValid(String password) {
         //TODO: Needs to block the use of '/' and ':'
+        if(password.contains("/:")) return false;
         return password.length() > 4;
     }
 
@@ -221,6 +248,27 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    //not really da good solution but makes it so the password is not in plain text in the shared preferences
+    //only an issue on rooted devices, otherwise this is unaccessible anyways
+    private String hashPW(String input) throws Exception{
+        String output;
+        byte[] ascii = input.getBytes("US-ASCII");
+        output = Arrays.toString(ascii);
+        Log.e("hashpw debug", Arrays.toString(ascii));
+        return output;
+    }
+    private String decodePW(String input){
+        input = input.substring(1,input.length());
+        StringBuilder sb = new StringBuilder();
+        StringTokenizer st = new StringTokenizer(input, " ");
+        while (st.hasMoreTokens()){
+            String token = st.nextToken();
+            char c = (char) Integer.parseInt(token.substring(0, token.length()-1));
+            sb.append(Character.toString(c));
+        }
+        return sb.toString();
+    }
+
 
 
     /**
@@ -245,19 +293,23 @@ public class LoginActivity extends AppCompatActivity {
         @Override
         protected Boolean doInBackground(Void... params) {
 
-
-            // TODO check if account exists if not prompt to create
-
             User user, userOutput = null;
             user = new User();
             user.emailAddress = mEmail;
             user.password = mPassword;
             if(mAccountCreation) {
                 user.userName = mUserName;
-                Log.e("happy hiker debug", "account creation");
-                //Do post of the User
+                //Do post of the User to create account
                 try {
                     if(UserServletConnection.putUser(user)) {
+                        //save user info
+                        SharedPreferences.Editor editor = sharedpreferences.edit();
+                        editor.putBoolean(getString(R.string.saved_user_state_key), true);
+                        editor.putString(getString(R.string.saved_user_email), user.emailAddress);
+                        editor.putString(getString(R.string.saved_user_pw), hashPW(user.password));
+                        editor.putString(getString(R.string.saved_user_name), user.userName);
+                        editor.commit();
+
                         Log.e("happy hiker debug log", "put user is unique");
                         return true;
                     } else {
@@ -270,6 +322,7 @@ public class LoginActivity extends AppCompatActivity {
                     return false;
                 }
 
+
             }else {
                 try {
                     userOutput = UserServletConnection.getUser(user);
@@ -280,13 +333,25 @@ public class LoginActivity extends AppCompatActivity {
                 if (userOutput == null) {
                     //account doesn't exist so change to new account views
                     mCreateNewAccount = true;
-                    Log.e("happyhiker debug", "user1 is null you failed");
                     return false;
                 } else {
                     //account exists
                     if (userOutput.password.equals("good")) {
-                        Log.e("happyhiker debug", "Authenticated as " + userOutput.userName);
+                        try{
+                        //if preferences are not saved then we will need to save them
+                        SharedPreferences.Editor editor = sharedpreferences.edit();
+                        editor.putBoolean(getString(R.string.saved_user_state_key), true);
+                        editor.putString(getString(R.string.saved_user_email), user.emailAddress);
+                        editor.putString(getString(R.string.saved_user_pw), hashPW(user.password));
+                        editor.putString(getString(R.string.saved_user_name), user.userName);
+                        editor.commit();
+                        }catch (Exception e){
+                            Log.e("happyhiker debug", "Authenticated as " + userOutput.userName);
+                        }
                     }else{
+                        SharedPreferences.Editor editor = sharedpreferences.edit();
+                        editor.putBoolean(getString(R.string.saved_user_state_key), false);
+                        editor.commit();
                         Log.e("happyhiker debug", "bad pw is: " + userOutput.password);
                         return false;
                     }
@@ -302,7 +367,6 @@ public class LoginActivity extends AppCompatActivity {
             showProgress(false);
 
             if (success) {
-                //TODO add to shared prefs
                 finish();
             } else {
                 if(mCreateNewAccount){
