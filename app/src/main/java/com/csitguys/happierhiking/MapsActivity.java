@@ -30,11 +30,11 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
-
+import com.google.maps.android.PolyUtil;
 import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
-        GoogleApiClient.ConnectionCallbacks, LocationListener, LocationSource {
+        GoogleApiClient.ConnectionCallbacks, LocationListener, LocationSource{
 
     private GoogleMap mMap;
 
@@ -43,14 +43,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private SharedPreferences sharedpreferences;
     private LocationManager locationManager;
     private Context mContext;
-    private List<LatLngList> mPathLists;
+    private ArrayList<ArrayList<LatLng>> mPathLists;
     private FetchHikePolyLinesTask mHikeTask = null;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        mPathLists = new ArrayList<ArrayList<LatLng>>();
         //Start the login activity if login is successful then load maps else login does not finish
         Intent intent = new Intent(this, LoginActivity.class);
         startActivity(intent);
@@ -97,6 +97,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onMapClick(com.google.android.gms.maps.model.LatLng latLng) {
                 Log.d("lat long: " , latLng.toString());
+                //use maputils library
+                for (ArrayList<LatLng> l :mPathLists) {
+                    boolean b = com.google.maps.android.PolyUtil.isLocationOnPath(latLng, l, true, 40);
+                    //Log
+                }
+
+
+
             }
         });
         //coordinates of CSUMB
@@ -218,7 +226,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         @Override
         protected void onPostExecute(HikeList paths){
-            mPathLists = paths.list;
+            mPathLists.clear();
             int i = 0;
 
             for(LatLngList l : paths.list){
@@ -227,6 +235,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 for(LatLong ll: l.list)
                 {
                     ml.add(new LatLng(ll.lat,ll.lng));
+                    Log.d("Harpy hiker:", ll.lat + " :  " + ll.lng);
                 }
                 Log.d("Harpy hiker:", ml.toString());
                 mMap.addPolyline(new PolylineOptions()
@@ -235,6 +244,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 .width(10)
                                 .geodesic(true)
                 );
+                mPathLists.add(ml);
             }
         }
         @Override
