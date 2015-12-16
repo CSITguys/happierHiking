@@ -3,6 +3,7 @@ package com.csitguys.hike;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.security.MessageDigest;
 import java.sql.*;
 import java.util.StringTokenizer;
 
@@ -114,10 +115,10 @@ public class UserService extends HttpServlet{
     		rs.close();
     		conn.commit();
     		conn.close();
-    		if(user.password.compareTo(password)==0){
+    		if(user.password.compareTo(hashSHA256(password))==0){
     			user.password = "good";
     		}else
-    			user.password = "bad"; 
+    			user.password = hashSHA256(password); 
     		return user;
     	}catch (Exception e){
     		e.printStackTrace();
@@ -147,7 +148,7 @@ public class UserService extends HttpServlet{
 	         // Execute SQL query
 	         Statement stmt = conn.createStatement();
 	         String sql = "INSERT INTO user (`user_id`, `user_email_add`, `user_pw`, `user_name`)"
-	        		+ "VALUES (NULL, '" + user.emailAddress + "', '"+ user.password + "', '" 
+	        		+ "VALUES (NULL, '" + user.emailAddress + "', SHA2('"+ user.password + "',256), '" 
 	        		+ user.userName + "')";
 	         responseCode = stmt.executeUpdate(sql);
 		} catch (Exception e ){
@@ -174,4 +175,19 @@ public class UserService extends HttpServlet{
 		   return null;  // there is no {id} 
 		}
 	}
+    private String hashSHA256(String input){
+    	StringBuilder hexString = new StringBuilder();
+    	try{
+    		MessageDigest digest = MessageDigest.getInstance("SHA-256");
+    		byte[] hash = digest.digest(input.getBytes("UTF-8"));
+    		for(int i : hash){
+    			String temp = Integer.toHexString(0XFF & i);
+    			if(temp.length()==1) temp = "0" + temp;
+    			hexString.append(temp);
+    		}
+    	} catch (Exception e){
+    		e.printStackTrace();
+    	}
+    	return hexString.toString(); 
+    }
 }

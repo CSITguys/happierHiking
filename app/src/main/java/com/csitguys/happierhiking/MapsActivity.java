@@ -5,9 +5,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
@@ -15,6 +17,7 @@ import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.widget.Toast;
+import java.util.ArrayList;
 
 //import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -25,6 +28,10 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
+
+import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks, LocationListener, LocationSource {
@@ -36,6 +43,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private SharedPreferences sharedpreferences;
     private LocationManager locationManager;
     private Context mContext;
+    private List<LatLngList> mPathLists;
+    private FetchHikePolyLinesTask mHikeTask = null;
 
 
     @Override
@@ -84,8 +93,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(com.google.android.gms.maps.model.LatLng latLng) {
+                Log.d("lat long: " , latLng.toString());
+            }
+        });
         //coordinates of CSUMB
-        LatLng csumb = new LatLng(36.65481, -121.8062);
+        LatLng csumb = new com.google.android.gms.maps.model.LatLng(36.65481, -121.8062);
         //place marker on map
        // mMap.addMarker(new MarkerOptions().position(csumb).title("Marker at CSUMB"));
        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(csumb, 10));
@@ -95,13 +110,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setMyLocationEnabled(true);
         //makes sure app permissions are set if not prompts to allow
         checkGPSPermission();
+
         sharedpreferences = getSharedPreferences(getString(R.string.pref_file), Context.MODE_PRIVATE);
-        String userName = sharedpreferences.getString(getString(R.string.saved_user_name),null);
+        String userName = sharedpreferences.getString(getString(R.string.saved_user_name), null);
         if(userName!=null){
             Toast.makeText(this, "Logged in as: " + userName, Toast.LENGTH_SHORT).show();
         }
         Log.e("Hiker App", Boolean.toString(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)));
+        drawPolyLines();
     }
+
+    private void drawPolyLines() {
+        //will get polylines from database then I will draw them
+
+
+        mHikeTask = new FetchHikePolyLinesTask(new LatLng(37.525, -121.89));
+        mHikeTask.execute((Void) null);
+
+
+    }
+
+
 
     @Override
     public void onConnected(Bundle bundle) {
@@ -164,6 +193,53 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
                 }
             }
+        }
+    }
+    private class FetchHikePolyLinesTask extends AsyncTask<Void,Void,HikeList> {
+
+        private LatLng mLatLng;
+
+        FetchHikePolyLinesTask(LatLng l){
+            mLatLng = l;
+
+        }
+
+        @Override
+        protected HikeList doInBackground(Void... params){
+            try {
+                HikeList pathLists = HikeGeoConnection.getHikes(mLatLng,true);
+                Log.i("happyHiker", "Fetched contents of URL: count returned=" + pathLists.list.size());
+                return pathLists;
+            } catch (Exception e){
+                Log.e("happyHiker", "Failed to fetch URL: ", e);
+            }
+            return new HikeList();  // return empty list.
+        }
+
+        @Override
+        protected void onPostExecute(HikeList paths){
+            mPathLists = paths.list;
+            int i = 0;
+
+            for(LatLngList l : paths.list){
+                i++;
+                ArrayList<LatLng> ml = new ArrayList<>();
+                for(LatLong ll: l.list)
+                {
+                    ml.add(new LatLng(ll.lat,ll.lng));
+                }
+                Log.d("Harpy hiker:", ml.toString());
+                mMap.addPolyline(new PolylineOptions()
+                                .addAll(ml)
+                                .color(Color.rgb(((255 + (i * 10)) % 255), (0 + (i * 50)) % 255, (40 + (i * 30)) % 255))
+                                .width(10)
+                                .geodesic(true)
+                );
+            }
+        }
+        @Override
+        protected void onCancelled(){
+
         }
     }
 

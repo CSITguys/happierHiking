@@ -27,4 +27,9 @@
     <string name="saved_user_email">savedUserEmail</string>
     <string name="saved_user_pw">savedUserPW</string>
     <string name="saved_user_name">savedUserName</string>
+
+    <string name="hike_name">Hike Name</string>
+    <string name="description">This is where the description would go</string>
+    <string name="difficulty">Hike Difficulty</string>
+    <string name="rating">Rating</string>
 </resources>
