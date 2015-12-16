@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
@@ -42,6 +43,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private SharedPreferences sharedpreferences;
     private LocationManager locationManager;
     private Context mContext;
+    private List<LatLngList> mPathLists;
+    private FetchHikePolyLinesTask mHikeTask = null;
 
 
     @Override
@@ -92,12 +95,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
-            public void onMapClick(LatLng latLng) {
+            public void onMapClick(com.google.android.gms.maps.model.LatLng latLng) {
                 Log.d("lat long: " , latLng.toString());
             }
         });
         //coordinates of CSUMB
-        LatLng csumb = new LatLng(36.65481, -121.8062);
+        LatLng csumb = new com.google.android.gms.maps.model.LatLng(36.65481, -121.8062);
         //place marker on map
        // mMap.addMarker(new MarkerOptions().position(csumb).title("Marker at CSUMB"));
        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(csumb, 10));
@@ -120,62 +123,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void drawPolyLines() {
         //will get polylines from database then I will draw them
 
-        HikeList hikes = getPolyLines();
-        int i = 0;
 
-        for(LatLngList l : hikes.list){
-            i++;
-            Log.d("Hapy hiker:", l.list.toString());
-            mMap.addPolyline(new PolylineOptions()
-                    .addAll(l.list)
-                    .color(Color.rgb(((255 + (i*10))%255), (0 + (i * 50))%255, (40 +(i*30))%255))
-                    .width(10)
-                    .geodesic(true)
-            );
-        }
+        mHikeTask = new FetchHikePolyLinesTask(new LatLng(37.525, -121.89));
+        mHikeTask.execute((Void) null);
+
 
     }
 
-    private HikeList getPolyLines() {
-        HikeList list = new HikeList();
-        LatLngList coords= new LatLngList();
-        LatLngList coords2= new LatLngList();
-        coords.list.add(new LatLng(36.65481, -121.8062));
-        coords.list.add( new LatLng(36.65481, -121.81));
-        coords.list.add(new LatLng(36.65481, -121.82));
-        coords.list.add(new LatLng(36.67, -121.83));
-        coords.list.add(new LatLng(36.68, -121.84));
-        coords.list.add(new LatLng(36.7, -121.85));
-        Log.d("hapy hiker coords:",coords.list.toString());
-        list.list.add(coords);
-       // coords.list.clear();
-        coords2.list.add(new LatLng(36.642121739738876, -121.76879335194826));
-        coords2.list.add(new LatLng(36.64065261569098,-121.76833570003508));
-        coords2.list.add(new LatLng(36.638724230157635,-121.76593244075777));
-        coords2.list.add(new LatLng(36.63780602404419,-121.76478814333677));
-        coords2.list.add(new LatLng(36.63633654865388,-121.76272820681334));
-        coords2.list.add(new LatLng(36.633765302852304,-121.76055360585451));
-        coords2.list.add(new LatLng(36.63156123271358,-121.76055360585451));
-        coords2.list.add(new LatLng(36.629448849985955,-121.76055360585451));
-        coords2.list.add(new LatLng(36.627703958275646,-121.76055360585451));
-        coords2.list.add(new LatLng(36.62595902705994,-121.76055360585451));
-        coords2.list.add(new LatLng(36.62403027377779,-121.75998162478209));
-        coords2.list.add(new LatLng(36.62145834826537,-121.75975263118744));
-        coords2.list.add(new LatLng(36.618886606041805,-121.76055360585451));
-        coords2.list.add(new LatLng(36.61870281077862,-121.76158357411623));
-        coords2.list.add(new LatLng(36.61778436609727,-121.76478814333677));
-        coords2.list.add(new LatLng(36.617141475220876,-121.76719140261412));
-        coords2.list.add(new LatLng(36.617141475220876,-121.76719140261412));
-        coords2.list.add(new LatLng(36.61521250131533,-121.76993798464537));
-        coords2.list.add(new LatLng(36.612181159104814,-121.7731422185898));
-        coords2.list.add(new LatLng(36.60703670082988,-121.7731422185898));
-        coords2.list.add(new LatLng(36.60428064794366,-121.77211225032806));
-        coords2.list.add(new LatLng(36.60097325449251,-121.77096795290707));
-        coords2.list.add(new LatLng(36.597757507410755,-121.7697089910507));
-        coords2.list.add(new LatLng(36.59408239604083,-121.76536012440921));
-        list.list.add(coords2);
-        return list;
-    }
+
 
     @Override
     public void onConnected(Bundle bundle) {
@@ -238,6 +193,53 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
                 }
             }
+        }
+    }
+    private class FetchHikePolyLinesTask extends AsyncTask<Void,Void,HikeList> {
+
+        private LatLng mLatLng;
+
+        FetchHikePolyLinesTask(LatLng l){
+            mLatLng = l;
+
+        }
+
+        @Override
+        protected HikeList doInBackground(Void... params){
+            try {
+                HikeList pathLists = HikeGeoConnection.getHikes(mLatLng,true);
+                Log.i("happyHiker", "Fetched contents of URL: count returned=" + pathLists.list.size());
+                return pathLists;
+            } catch (Exception e){
+                Log.e("happyHiker", "Failed to fetch URL: ", e);
+            }
+            return new HikeList();  // return empty list.
+        }
+
+        @Override
+        protected void onPostExecute(HikeList paths){
+            mPathLists = paths.list;
+            int i = 0;
+
+            for(LatLngList l : paths.list){
+                i++;
+                ArrayList<LatLng> ml = new ArrayList<>();
+                for(LatLong ll: l.list)
+                {
+                    ml.add(new LatLng(ll.lat,ll.lng));
+                }
+                Log.d("Harpy hiker:", ml.toString());
+                mMap.addPolyline(new PolylineOptions()
+                                .addAll(ml)
+                                .color(Color.rgb(((255 + (i * 10)) % 255), (0 + (i * 50)) % 255, (40 + (i * 30)) % 255))
+                                .width(10)
+                                .geodesic(true)
+                );
+            }
+        }
+        @Override
+        protected void onCancelled(){
+
         }
     }
 
