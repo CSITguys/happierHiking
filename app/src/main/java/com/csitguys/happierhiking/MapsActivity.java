@@ -34,7 +34,7 @@ import com.google.maps.android.PolyUtil;
 import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
-        GoogleApiClient.ConnectionCallbacks, LocationListener, LocationSource {
+        GoogleApiClient.ConnectionCallbacks, LocationListener, LocationSource{
 
     private GoogleMap mMap;
 
