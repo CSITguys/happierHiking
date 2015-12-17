@@ -17,8 +17,11 @@ import com.google.android.gms.maps.model.LatLng;
 //Hike Display page shows user information about the hike EX. name, description, rating, difficulty REQUIREMENT #8
 public class HikeDisplay extends AppCompatActivity implements View.OnClickListener {
 
+    //Create button's for the page's buttons
     Button button1;
     Button button2;
+    
+    // variables for hike chosen
     Hike mHike;
     double mStartLat;
     double mStartlng;
@@ -27,7 +30,7 @@ public class HikeDisplay extends AppCompatActivity implements View.OnClickListen
     private fetchHike mFetch = null;
 
 
-
+    //functions to change textview's to hike information REQUIREMENT #8
     private TextView changeHikeName;
     private TextView HikeDescription;
     private TextView changeRating;
@@ -52,6 +55,8 @@ public class HikeDisplay extends AppCompatActivity implements View.OnClickListen
         setContentView(R.layout.activity_hike_display);
         //Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
        // setSupportActionBar(toolbar);
+       
+       //Activate button's
         button1 = (Button)findViewById(R.id.newcomment);
         button1.setOnClickListener(this);
 
@@ -59,7 +64,7 @@ public class HikeDisplay extends AppCompatActivity implements View.OnClickListen
         button2.setOnClickListener(this);
 
 
-
+        //Change textview's to hikes information
         changeHikeName = (TextView) findViewById(R.id.hikename);
         changeHikeName.setText(name);
 
@@ -77,16 +82,19 @@ public class HikeDisplay extends AppCompatActivity implements View.OnClickListen
 
     }
 
+    //return to map
     private void returnToMap()
     {
         finish();
     }
 
+    //go to add comment page
     private void addComment()
     {
         startActivity(new Intent(".AddComment"));
     }
 
+    //function to make button's work properly
     @Override
     public void onClick(View v) {
         switch (v.getId())
@@ -99,6 +107,8 @@ public class HikeDisplay extends AppCompatActivity implements View.OnClickListen
                 break;
         }
     }
+    
+    //Class to get hike's information from the database REQUIREMENT #4
     private class fetchHike extends AsyncTask<Void,Void,Hike> {
 
         private LatLng mLatLngStart;
