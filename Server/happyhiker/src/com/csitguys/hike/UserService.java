@@ -67,6 +67,7 @@ public class UserService extends HttpServlet{
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
 		if (emailAddress != null) {
 			User user = getUser(emailAddress, password);
+			//user wasn't found
 			if (user == null){
 				//out.println("the user is null");
 				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
