@@ -14,6 +14,8 @@ import java.net.URL;
 /**
  * Created by Brian on 12/11/2015.
  */
+ 
+ //App uses Servet to connect to database REQUIREMENT #9
 public class UserServletConnection {
     private static final int NO_UPDATE = 304;
 
