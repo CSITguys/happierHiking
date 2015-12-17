@@ -14,6 +14,7 @@ import android.widget.TextView;
 
 import com.google.android.gms.maps.model.LatLng;
 
+//Hike Display page shows user information about the hike EX. name, description, rating, difficulty REQUIREMENT #8
 public class HikeDisplay extends AppCompatActivity implements View.OnClickListener {
 
     Button button1;
@@ -32,7 +33,7 @@ public class HikeDisplay extends AppCompatActivity implements View.OnClickListen
     private TextView changeRating;
     private TextView changeDifficult;
 
-    //Dummy things to test if the string resources have been changed properly
+    //Dummy hike info to test if the string resources have been changed properly
     String name = "This Hike";
     String description = "This is a dummy description of the dummy hike";
     int rating = 5;
