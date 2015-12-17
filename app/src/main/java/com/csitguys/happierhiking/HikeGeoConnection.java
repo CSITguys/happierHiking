@@ -15,6 +15,8 @@ import java.util.List;
 /**
  * Created by Brian on 12/15/2015.
  */
+ 
+ //This page helps the app find the geo location of the user REQUIREMENT #6
 public class HikeGeoConnection {
     private static final String SERVER_URL = "http://cstserver2b.bitnamiapp.com/happyhiker/geohike";
 
