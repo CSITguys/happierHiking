@@ -45,6 +45,22 @@
             android:name=".LoginActivity"
             android:label="@string/title_activity_login" >
         </activity>
+        <activity
+            android:name=".HikeDisplay"
+            android:label="HikeDisplay" >
+            <intent-filter>
+                <action android:name="happierhiking.HikeDisplay" />
+            </intent-filter>
+        </activity>
+        <!--<activity
+            android:name=".AddComment"
+            android:label="@string/AddComment" >
+            <intent-filter>
+                <action android:name="happierhiking.AddComment" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>.-->
+
     </application>
 
 </manifest>

@@ -19,7 +19,11 @@ public class HikeGeoConnection {
     private static final String SERVER_URL = "http://cstserver2b.bitnamiapp.com/happyhiker/geohike";
 
     public static HikeList getHikes(LatLng latLng, boolean coords)throws Exception {
-        URL url = new URL(SERVER_URL + "/" + latLng.latitude + ":" + latLng.longitude +"&true");
+       String urlPath = SERVER_URL + "/" + latLng.latitude + ":" + latLng.longitude ;
+        if(coords){
+            urlPath = urlPath.concat("&true");
+        }
+        URL url = new URL(urlPath);
         Log.e("serverUrl", url.toString());
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         try {
@@ -38,6 +42,22 @@ public class HikeGeoConnection {
             connection.disconnect();
         }
 
+    }
+    public static Hike getHike(LatLng start, LatLng end)throws Exception{
+        String urlPath = SERVER_URL + "/" + start.latitude + ":" + start.longitude +'$'+end.latitude+':' + end.longitude;
+        URL url = new URL(urlPath);
+        Log.e("serverUrl", url.toString());
+        Log.e("new server url", urlPath);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        try {
+            InputStreamReader in = new InputStreamReader(connection.getInputStream());
+            GsonBuilder builder = new GsonBuilder();
+            Gson gson = builder.create();
+            Hike hike = gson.fromJson(in,Hike.class);
+            return hike;
+        } finally {
+            connection.disconnect();
+        }
     }
 
 }
