@@ -37,6 +37,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         GoogleApiClient.ConnectionCallbacks, LocationListener, LocationSource{
 
     private GoogleMap mMap;
+    private Hike mHike;
 
     private final static int MY_PERMISSION_ACCESS_FINE_LOCATION = 1;
     private LocationSource.OnLocationChangedListener mListener;
@@ -99,8 +100,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Log.d("lat long: " , latLng.toString());
                 //use maputils library
                 for (ArrayList<LatLng> l :mPathLists) {
-                    boolean b = com.google.maps.android.PolyUtil.isLocationOnPath(latLng, l, true, 40);
-                    //Log
+                    //islocationOnPath takes the touch long/lat to determine if a a poly/hike was clicked
+                    if(com.google.maps.android.PolyUtil.isLocationOnPath(latLng, l, true, 60)){
+                        //get first middle and last point send to new intent
+                        Intent intent = new Intent(MapsActivity.this, HikeDisplay.class);
+                        intent.putExtra("startLat", l.get(0).latitude);
+                        intent.putExtra("startLng",l.get(0).longitude);
+                        intent.putExtra("endLat",l.get(l.size()-1).latitude);
+                        intent.putExtra("endLng",l.get(l.size()-1).longitude);
+                        startActivity(intent);
+                    }
+
                 }
 
 
@@ -108,7 +118,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
         //coordinates of CSUMB
-        LatLng csumb = new com.google.android.gms.maps.model.LatLng(36.65481, -121.8062);
+        LatLng csumb = new com.google.android.gms.maps.model.LatLng(37.51, -121.84);
         //place marker on map
        // mMap.addMarker(new MarkerOptions().position(csumb).title("Marker at CSUMB"));
        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(csumb, 10));
@@ -131,7 +141,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void drawPolyLines() {
         //will get polylines from database then I will draw them
 
-
+        //TODO remove hard coded lat long tie it into camera moved
         mHikeTask = new FetchHikePolyLinesTask(new LatLng(37.525, -121.89));
         mHikeTask.execute((Void) null);
 
@@ -240,7 +250,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Log.d("Harpy hiker:", ml.toString());
                 mMap.addPolyline(new PolylineOptions()
                                 .addAll(ml)
-                                .color(Color.rgb(((255 + (i * 10)) % 255), (0 + (i * 50)) % 255, (40 + (i * 30)) % 255))
+                                .color(Color.rgb(((100 + (i * 10)) % 255), (20 + (i * 8)) % 255, (40 + (i * 6)) % 255))
                                 .width(10)
                                 .geodesic(true)
                 );
@@ -253,6 +263,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+
+  /********************************************************************************/
+
+
+
+
+
+
+
+
+
+
+
+
+
+/***********************************************************************************/
     private void checkGPSPermission() {
         if (Build.VERSION.SDK_INT >= 23) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
