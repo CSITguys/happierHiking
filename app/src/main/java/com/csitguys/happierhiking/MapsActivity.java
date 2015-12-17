@@ -56,6 +56,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Intent intent = new Intent(this, LoginActivity.class);
         startActivity(intent);
 
+        //Open the map to display to user REQUIREMENT #5
         setContentView(R.layout.activity_maps);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -234,6 +235,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             return new HikeList();  // return empty list.
         }
 
+
+        //Display hiking trails for user to see REQUIREMENT #7
         @Override
         protected void onPostExecute(HikeList paths){
             mPathLists.clear();
@@ -277,7 +280,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
 
-
+//GeoLocate the map to your current location REQUIREMENT #6
 /***********************************************************************************/
     private void checkGPSPermission() {
         if (Build.VERSION.SDK_INT >= 23) {
